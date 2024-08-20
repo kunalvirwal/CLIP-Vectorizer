@@ -1,4 +1,6 @@
 import time
+from PIL import Image
+import requests
 import torch
 from transformers import CLIPProcessor, CLIPModel
 
@@ -161,13 +163,158 @@ def benchmark_text():
         start_time = time.time()
         for i in sentences:
             generate_text_embedding(i)
-            
         total_time = time.time()-start_time
         times.append(total_time)
     print("The program while running on",device,"took:"+str(sum(times)/rounds))
 
-# def generate_image_embedding():
+def benchmark_image():
     
+    # print(len(sentences))
+    images = [
+        "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp",
+        "https://miro.medium.com/v2/resize:fit:800/1*n4NaE_6qCzUaKUPTNbfpcA.jpeg",
+        "https://m.media-amazon.com/images/I/51KrxEKN58L.jpg",
+        "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp",
+        "https://miro.medium.com/v2/resize:fit:800/1*n4NaE_6qCzUaKUPTNbfpcA.jpeg",
+        "https://m.media-amazon.com/images/I/51KrxEKN58L.jpg",
+        "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp",
+        "https://miro.medium.com/v2/resize:fit:800/1*n4NaE_6qCzUaKUPTNbfpcA.jpeg",
+        "https://m.media-amazon.com/images/I/51KrxEKN58L.jpg",
+        "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp",
+        "https://miro.medium.com/v2/resize:fit:800/1*n4NaE_6qCzUaKUPTNbfpcA.jpeg",
+        "https://m.media-amazon.com/images/I/51KrxEKN58L.jpg",
+        "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp",
+        "https://miro.medium.com/v2/resize:fit:800/1*n4NaE_6qCzUaKUPTNbfpcA.jpeg",
+        "https://m.media-amazon.com/images/I/51KrxEKN58L.jpg",
+        "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp",
+        "https://miro.medium.com/v2/resize:fit:800/1*n4NaE_6qCzUaKUPTNbfpcA.jpeg",
+        "https://m.media-amazon.com/images/I/51KrxEKN58L.jpg",
+        "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp",
+        "https://miro.medium.com/v2/resize:fit:800/1*n4NaE_6qCzUaKUPTNbfpcA.jpeg",
+        "https://m.media-amazon.com/images/I/51KrxEKN58L.jpg",
+        "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp",
+        "https://miro.medium.com/v2/resize:fit:800/1*n4NaE_6qCzUaKUPTNbfpcA.jpeg",
+        "https://m.media-amazon.com/images/I/51KrxEKN58L.jpg",
+        "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp",
+        "https://miro.medium.com/v2/resize:fit:800/1*n4NaE_6qCzUaKUPTNbfpcA.jpeg",
+        "https://m.media-amazon.com/images/I/51KrxEKN58L.jpg",
+        "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp",
+        "https://miro.medium.com/v2/resize:fit:800/1*n4NaE_6qCzUaKUPTNbfpcA.jpeg",
+        "https://m.media-amazon.com/images/I/51KrxEKN58L.jpg",
+        "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp",
+        "https://miro.medium.com/v2/resize:fit:800/1*n4NaE_6qCzUaKUPTNbfpcA.jpeg",
+        "https://m.media-amazon.com/images/I/51KrxEKN58L.jpg",
+        "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp",
+        "https://miro.medium.com/v2/resize:fit:800/1*n4NaE_6qCzUaKUPTNbfpcA.jpeg",
+        "https://m.media-amazon.com/images/I/51KrxEKN58L.jpg",
+        "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp",
+        "https://miro.medium.com/v2/resize:fit:800/1*n4NaE_6qCzUaKUPTNbfpcA.jpeg",
+        "https://m.media-amazon.com/images/I/51KrxEKN58L.jpg",
+        "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp",
+        "https://miro.medium.com/v2/resize:fit:800/1*n4NaE_6qCzUaKUPTNbfpcA.jpeg",
+        "https://m.media-amazon.com/images/I/51KrxEKN58L.jpg",
+        "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp",
+        "https://miro.medium.com/v2/resize:fit:800/1*n4NaE_6qCzUaKUPTNbfpcA.jpeg",
+        "https://m.media-amazon.com/images/I/51KrxEKN58L.jpg",
+        "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp",
+        "https://miro.medium.com/v2/resize:fit:800/1*n4NaE_6qCzUaKUPTNbfpcA.jpeg",
+        "https://m.media-amazon.com/images/I/51KrxEKN58L.jpg",
+        "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp",
+        "https://miro.medium.com/v2/resize:fit:800/1*n4NaE_6qCzUaKUPTNbfpcA.jpeg",
+        "https://m.media-amazon.com/images/I/51KrxEKN58L.jpg",
+        "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp",
+        "https://miro.medium.com/v2/resize:fit:800/1*n4NaE_6qCzUaKUPTNbfpcA.jpeg",
+        "https://m.media-amazon.com/images/I/51KrxEKN58L.jpg",
+        "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp",
+        "https://miro.medium.com/v2/resize:fit:800/1*n4NaE_6qCzUaKUPTNbfpcA.jpeg",
+        "https://m.media-amazon.com/images/I/51KrxEKN58L.jpg",
+        "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp",
+        "https://miro.medium.com/v2/resize:fit:800/1*n4NaE_6qCzUaKUPTNbfpcA.jpeg",
+        "https://m.media-amazon.com/images/I/51KrxEKN58L.jpg",
+        "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp",
+        "https://miro.medium.com/v2/resize:fit:800/1*n4NaE_6qCzUaKUPTNbfpcA.jpeg",
+        "https://m.media-amazon.com/images/I/51KrxEKN58L.jpg",
+        "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp",
+        "https://miro.medium.com/v2/resize:fit:800/1*n4NaE_6qCzUaKUPTNbfpcA.jpeg",
+        "https://m.media-amazon.com/images/I/51KrxEKN58L.jpg",
+        "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp",
+        "https://miro.medium.com/v2/resize:fit:800/1*n4NaE_6qCzUaKUPTNbfpcA.jpeg",
+        "https://m.media-amazon.com/images/I/51KrxEKN58L.jpg",
+        "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp",
+        "https://miro.medium.com/v2/resize:fit:800/1*n4NaE_6qCzUaKUPTNbfpcA.jpeg",
+        "https://m.media-amazon.com/images/I/51KrxEKN58L.jpg",
+        "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp",
+        "https://miro.medium.com/v2/resize:fit:800/1*n4NaE_6qCzUaKUPTNbfpcA.jpeg",
+        "https://m.media-amazon.com/images/I/51KrxEKN58L.jpg",
+        "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp",
+        "https://miro.medium.com/v2/resize:fit:800/1*n4NaE_6qCzUaKUPTNbfpcA.jpeg",
+        "https://m.media-amazon.com/images/I/51KrxEKN58L.jpg",
+        "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp",
+        "https://miro.medium.com/v2/resize:fit:800/1*n4NaE_6qCzUaKUPTNbfpcA.jpeg",
+        "https://m.media-amazon.com/images/I/51KrxEKN58L.jpg",
+        "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp",
+        "https://miro.medium.com/v2/resize:fit:800/1*n4NaE_6qCzUaKUPTNbfpcA.jpeg",
+        "https://m.media-amazon.com/images/I/51KrxEKN58L.jpg",
+        "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp",
+        "https://miro.medium.com/v2/resize:fit:800/1*n4NaE_6qCzUaKUPTNbfpcA.jpeg",
+        "https://m.media-amazon.com/images/I/51KrxEKN58L.jpg",
+        "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp",
+        "https://miro.medium.com/v2/resize:fit:800/1*n4NaE_6qCzUaKUPTNbfpcA.jpeg",
+        "https://m.media-amazon.com/images/I/51KrxEKN58L.jpg",
+        "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp",
+        "https://miro.medium.com/v2/resize:fit:800/1*n4NaE_6qCzUaKUPTNbfpcA.jpeg",
+        "https://m.media-amazon.com/images/I/51KrxEKN58L.jpg",
+        "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp",
+        "https://miro.medium.com/v2/resize:fit:800/1*n4NaE_6qCzUaKUPTNbfpcA.jpeg",
+        "https://m.media-amazon.com/images/I/51KrxEKN58L.jpg",
+        "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp",
+        "https://miro.medium.com/v2/resize:fit:800/1*n4NaE_6qCzUaKUPTNbfpcA.jpeg",
+        "https://m.media-amazon.com/images/I/51KrxEKN58L.jpg",
+        "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp",
+        "https://miro.medium.com/v2/resize:fit:800/1*n4NaE_6qCzUaKUPTNbfpcA.jpeg",
+        "https://m.media-amazon.com/images/I/51KrxEKN58L.jpg",
+        "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp",
+        "https://miro.medium.com/v2/resize:fit:800/1*n4NaE_6qCzUaKUPTNbfpcA.jpeg",
+        "https://m.media-amazon.com/images/I/51KrxEKN58L.jpg",
+        "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp",
+        "https://miro.medium.com/v2/resize:fit:800/1*n4NaE_6qCzUaKUPTNbfpcA.jpeg",
+        "https://m.media-amazon.com/images/I/51KrxEKN58L.jpg",
+        "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp",
+        "https://miro.medium.com/v2/resize:fit:800/1*n4NaE_6qCzUaKUPTNbfpcA.jpeg",
+        "https://m.media-amazon.com/images/I/51KrxEKN58L.jpg",
+        "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp",
+        "https://miro.medium.com/v2/resize:fit:800/1*n4NaE_6qCzUaKUPTNbfpcA.jpeg",
+        "https://m.media-amazon.com/images/I/51KrxEKN58L.jpg",
+        "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp",
+        "https://miro.medium.com/v2/resize:fit:800/1*n4NaE_6qCzUaKUPTNbfpcA.jpeg",
+        "https://m.media-amazon.com/images/I/51KrxEKN58L.jpg",
+        "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp",
+        "https://miro.medium.com/v2/resize:fit:800/1*n4NaE_6qCzUaKUPTNbfpcA.jpeg",
+        "https://m.media-amazon.com/images/I/51KrxEKN58L.jpg"        
+    ]
+    times=[]
+    rounds=10
+    for j in range(rounds):
+        start_time = time.time()
+        for i in images:
+            generate_image_embedding(i)
+        total_time = time.time()-start_time
+        times.append(total_time)
+    print("The program while running on",device,"took:"+str(sum(times)/rounds))
 
 
-# benchmark_text()
+def generate_image_embedding(img):
+    url = "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp"
+    img  = Image.open(requests.get(url, stream=True).raw)
+    image = processor(
+        text=None,
+        images=img,
+        return_tensors='pt'
+    ).to(device)['pixel_values']
+    image_embeddings = model.get_image_features(image)
+    print(image_embeddings  )
+    return image_embeddings
+
+
+benchmark_text()
+# benchmark_image()
