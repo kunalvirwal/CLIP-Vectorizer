@@ -19,7 +19,6 @@ safetensors==0.4.4
 sympy==1.12
 tokenizers==0.19.1
 torch==2.4.0+cu124
-torchaudio==2.4.0+cu124
 torchvision==0.19.0+cu124
 tqdm==4.66.5
 transformers==4.44.0

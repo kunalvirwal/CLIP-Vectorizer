@@ -3,7 +3,7 @@ from PIL import Image
 import requests
 import torch
 from transformers import CLIPProcessor, CLIPModel
-
+   
 model_id="openai/clip-vit-base-patch32"
 
 model = CLIPModel.from_pretrained(model_id)
@@ -31,7 +31,7 @@ def generate_text_embedding(phrase):
     # detach from pytorch gradient computation 
     label_embeddings = label_embeddings.detach().cpu().numpy()
     return label_embeddings
-    
+
 def benchmark_text():
     sentences = [
         "The quick brown fox jumps over the lazy dog.",
@@ -169,7 +169,6 @@ def benchmark_text():
 
 def benchmark_image():
     
-    # print(len(sentences))
     images = [
         "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp",
         "https://miro.medium.com/v2/resize:fit:800/1*n4NaE_6qCzUaKUPTNbfpcA.jpeg",
@@ -318,3 +317,5 @@ def generate_image_embedding(img):
 
 benchmark_text()
 # benchmark_image()
+
+    
