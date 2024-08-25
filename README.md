@@ -12,7 +12,7 @@ This is openAI's CLIP model based API that creates text and image vector-embeddi
   > `docker build -t vectorizer .`
 
 - Run the program inside a container using
-  > `docker run -it --gpus all vectorizer -p 5000:5000`  
+  > `docker run -it --gpus all -p 5000:5000 vectorizer`  
 
 ## ***API routes***
 - `/text_embedd`   
