@@ -1,24 +1,41 @@
 import time
+# import PIL
 from PIL import Image
-import requests
+from io import BytesIO
+# import requests
+from fastapi import FastAPI , File , UploadFile 
 import torch
+from torch.nn.functional import normalize
 from transformers import CLIPProcessor, CLIPModel
-   
-model_id="openai/clip-vit-base-patch32"
+from pydantic import BaseModel
 
-model = CLIPModel.from_pretrained(model_id)
+model_id="openai/clip-vit-base-patch32"
+torch_dtype = torch.float16
+
+model = CLIPModel.from_pretrained(model_id,torch_dtype=torch_dtype,)
 processor = CLIPProcessor.from_pretrained(model_id,clean_up_tokenization_spaces=True)
+
 
 # if you have cuda set it to the active device
 device = "cuda" if torch.cuda.is_available() else "cpu"
 print(device)
+
 # to display CUDA device name
 # print(torch.cuda.get_device_name(torch.cuda.current_device()))  
+
 # move the model to the device
 model.to(device)
 
+app = FastAPI()
 
-def generate_text_embedding(phrase):
+class Text_input(BaseModel):
+    text: str
+    normalized: bool = True
+
+@app.post("/text_embedd")
+async def generate_text_embedding(text_input: Text_input ):
+    phrase = text_input.text
+    print("Input: ",phrase)
     label_tokens = processor(
         text=phrase,
         padding=True,
@@ -29,293 +46,72 @@ def generate_text_embedding(phrase):
     # encode tokens to sentence embeddings
     label_embeddings = model.get_text_features(**label_tokens)
     # detach from pytorch gradient computation 
-    label_embeddings = label_embeddings.detach().cpu().numpy()
-    return label_embeddings
+    if text_input.normalized:
+        label_embeddings = normalize(label_embeddings, p=2, dim=1)
+    label_embeddings = label_embeddings.detach().cpu().tolist()
+    return {"result":label_embeddings[0]}
 
 def benchmark_text():
-    sentences = [
-        "The quick brown fox jumps over the lazy dog.",
-        "Artificial intelligence is transforming the world.",
-        "Python is a versatile programming language.",
-        "The sun rises in the east and sets in the west.",
-        "He enjoys hiking in the mountains during the summer.",
-        "Music can be a great source of relaxation and inspiration.",
-        "Reading books expands your knowledge and imagination.",
-        "The cat sat on the mat and stared at the window.",
-        "She baked a delicious chocolate cake for the party.",
-        "Traveling to new places broadens your horizons.",
-        "The quick brown fox jumps over the lazy dog.",
-        "Artificial intelligence is transforming the world.",
-        "Python is a versatile programming language.",
-        "The sun rises in the east and sets in the west.",
-        "He enjoys hiking in the mountains during the summer.",
-        "Music can be a great source of relaxation and inspiration.",
-        "Reading books expands your knowledge and imagination.",
-        "The cat sat on the mat and stared at the window.",
-        "She baked a delicious chocolate cake for the party.",
-        "Traveling to new places broadens your horizons.",
-        "The quick brown fox jumps over the lazy dog.",
-        "Artificial intelligence is transforming the world.",
-        "Python is a versatile programming language.",
-        "The sun rises in the east and sets in the west.",
-        "He enjoys hiking in the mountains during the summer.",
-        "Music can be a great source of relaxation and inspiration.",
-        "Reading books expands your knowledge and imagination.",
-        "The cat sat on the mat and stared at the window.",
-        "She baked a delicious chocolate cake for the party.",
-        "Traveling to new places broadens your horizons.",
-        "The quick brown fox jumps over the lazy dog.",
-        "Artificial intelligence is transforming the world.",
-        "Python is a versatile programming language.",
-        "The sun rises in the east and sets in the west.",
-        "He enjoys hiking in the mountains during the summer.",
-        "Music can be a great source of relaxation and inspiration.",
-        "Reading books expands your knowledge and imagination.",
-        "The cat sat on the mat and stared at the window.",
-        "She baked a delicious chocolate cake for the party.",
-        "Traveling to new places broadens your horizons.",
-        "The quick brown fox jumps over the lazy dog.",
-        "Artificial intelligence is transforming the world.",
-        "Python is a versatile programming language.",
-        "The sun rises in the east and sets in the west.",
-        "He enjoys hiking in the mountains during the summer.",
-        "Music can be a great source of relaxation and inspiration.",
-        "Reading books expands your knowledge and imagination.",
-        "The cat sat on the mat and stared at the window.",
-        "She baked a delicious chocolate cake for the party.",
-        "Traveling to new places broadens your horizons.",
-        "The quick brown fox jumps over the lazy dog.",
-        "Artificial intelligence is transforming the world.",
-        "Python is a versatile programming language.",
-        "The sun rises in the east and sets in the west.",
-        "He enjoys hiking in the mountains during the summer.",
-        "Music can be a great source of relaxation and inspiration.",
-        "Reading books expands your knowledge and imagination.",
-        "The cat sat on the mat and stared at the window.",
-        "She baked a delicious chocolate cake for the party.",
-        "Traveling to new places broadens your horizons.",
-        "The quick brown fox jumps over the lazy dog.",
-        "Artificial intelligence is transforming the world.",
-        "Python is a versatile programming language.",
-        "The sun rises in the east and sets in the west.",
-        "He enjoys hiking in the mountains during the summer.",
-        "Music can be a great source of relaxation and inspiration.",
-        "Reading books expands your knowledge and imagination.",
-        "The cat sat on the mat and stared at the window.",
-        "She baked a delicious chocolate cake for the party.",
-        "Traveling to new places broadens your horizons.",
-        "The quick brown fox jumps over the lazy dog.",
-        "Artificial intelligence is transforming the world.",
-        "Python is a versatile programming language.",
-        "The sun rises in the east and sets in the west.",
-        "He enjoys hiking in the mountains during the summer.",
-        "Music can be a great source of relaxation and inspiration.",
-        "Reading books expands your knowledge and imagination.",
-        "The cat sat on the mat and stared at the window.",
-        "She baked a delicious chocolate cake for the party.",
-        "Traveling to new places broadens your horizons.",
-        "The quick brown fox jumps over the lazy dog.",
-        "Artificial intelligence is transforming the world.",
-        "Python is a versatile programming language.",
-        "The sun rises in the east and sets in the west.",
-        "He enjoys hiking in the mountains during the summer.",
-        "Music can be a great source of relaxation and inspiration.",
-        "Reading books expands your knowledge and imagination.",
-        "The cat sat on the mat and stared at the window.",
-        "She baked a delicious chocolate cake for the party.",
-        "Traveling to new places broadens your horizons.",
-        "The quick brown fox jumps over the lazy dog.",
-        "Artificial intelligence is transforming the world.",
-        "Python is a versatile programming language.",
-        "The sun rises in the east and sets in the west.",
-        "He enjoys hiking in the mountains during the summer.",
-        "Music can be a great source of relaxation and inspiration.",
-        "Reading books expands your knowledge and imagination.",
-        "The cat sat on the mat and stared at the window.",
-        "She baked a delicious chocolate cake for the party.",
-        "Traveling to new places broadens your horizons.",
-        "The quick brown fox jumps over the lazy dog.",
-        "Artificial intelligence is transforming the world.",
-        "Python is a versatile programming language.",
-        "The sun rises in the east and sets in the west.",
-        "He enjoys hiking in the mountains during the summer.",
-        "Music can be a great source of relaxation and inspiration.",
-        "Reading books expands your knowledge and imagination.",
-        "The cat sat on the mat and stared at the window.",
-        "She baked a delicious chocolate cake for the party.",
-        "Traveling to new places broadens your horizons.",
-        "The quick brown fox jumps over the lazy dog.",
-        "Artificial intelligence is transforming the world.",
-        "Python is a versatile programming language.",
-        "The sun rises in the east and sets in the west.",
-        "He enjoys hiking in the mountains during the summer.",
-        "Music can be a great source of relaxation and inspiration.",
-        "Reading books expands your knowledge and imagination.",
-        "The cat sat on the mat and stared at the window.",
-        "She baked a delicious chocolate cake for the party.",
-        "Traveling to new places broadens your horizons."
-
-    ]
+    sentences = ["List of test sentences"]
     # print(len(sentences))
-    times=[]
-    rounds=5
+    lap_times=[]
+    rounds=10
     for j in range(rounds):
         start_time = time.time()
         for i in sentences:
             generate_text_embedding(i)
         total_time = time.time()-start_time
-        times.append(total_time)
-    print("The program while running on",device,"took:"+str(sum(times)/rounds))
+        lap_times.append(total_time)
+    print("The program while running on",device,"took:"+str(sum(lap_times)/rounds))
 
 def benchmark_image():
-    
-    images = [
-        "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp",
-        "https://miro.medium.com/v2/resize:fit:800/1*n4NaE_6qCzUaKUPTNbfpcA.jpeg",
-        "https://m.media-amazon.com/images/I/51KrxEKN58L.jpg",
-        "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp",
-        "https://miro.medium.com/v2/resize:fit:800/1*n4NaE_6qCzUaKUPTNbfpcA.jpeg",
-        "https://m.media-amazon.com/images/I/51KrxEKN58L.jpg",
-        "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp",
-        "https://miro.medium.com/v2/resize:fit:800/1*n4NaE_6qCzUaKUPTNbfpcA.jpeg",
-        "https://m.media-amazon.com/images/I/51KrxEKN58L.jpg",
-        "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp",
-        "https://miro.medium.com/v2/resize:fit:800/1*n4NaE_6qCzUaKUPTNbfpcA.jpeg",
-        "https://m.media-amazon.com/images/I/51KrxEKN58L.jpg",
-        "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp",
-        "https://miro.medium.com/v2/resize:fit:800/1*n4NaE_6qCzUaKUPTNbfpcA.jpeg",
-        "https://m.media-amazon.com/images/I/51KrxEKN58L.jpg",
-        "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp",
-        "https://miro.medium.com/v2/resize:fit:800/1*n4NaE_6qCzUaKUPTNbfpcA.jpeg",
-        "https://m.media-amazon.com/images/I/51KrxEKN58L.jpg",
-        "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp",
-        "https://miro.medium.com/v2/resize:fit:800/1*n4NaE_6qCzUaKUPTNbfpcA.jpeg",
-        "https://m.media-amazon.com/images/I/51KrxEKN58L.jpg",
-        "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp",
-        "https://miro.medium.com/v2/resize:fit:800/1*n4NaE_6qCzUaKUPTNbfpcA.jpeg",
-        "https://m.media-amazon.com/images/I/51KrxEKN58L.jpg",
-        "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp",
-        "https://miro.medium.com/v2/resize:fit:800/1*n4NaE_6qCzUaKUPTNbfpcA.jpeg",
-        "https://m.media-amazon.com/images/I/51KrxEKN58L.jpg",
-        "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp",
-        "https://miro.medium.com/v2/resize:fit:800/1*n4NaE_6qCzUaKUPTNbfpcA.jpeg",
-        "https://m.media-amazon.com/images/I/51KrxEKN58L.jpg",
-        "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp",
-        "https://miro.medium.com/v2/resize:fit:800/1*n4NaE_6qCzUaKUPTNbfpcA.jpeg",
-        "https://m.media-amazon.com/images/I/51KrxEKN58L.jpg",
-        "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp",
-        "https://miro.medium.com/v2/resize:fit:800/1*n4NaE_6qCzUaKUPTNbfpcA.jpeg",
-        "https://m.media-amazon.com/images/I/51KrxEKN58L.jpg",
-        "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp",
-        "https://miro.medium.com/v2/resize:fit:800/1*n4NaE_6qCzUaKUPTNbfpcA.jpeg",
-        "https://m.media-amazon.com/images/I/51KrxEKN58L.jpg",
-        "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp",
-        "https://miro.medium.com/v2/resize:fit:800/1*n4NaE_6qCzUaKUPTNbfpcA.jpeg",
-        "https://m.media-amazon.com/images/I/51KrxEKN58L.jpg",
-        "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp",
-        "https://miro.medium.com/v2/resize:fit:800/1*n4NaE_6qCzUaKUPTNbfpcA.jpeg",
-        "https://m.media-amazon.com/images/I/51KrxEKN58L.jpg",
-        "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp",
-        "https://miro.medium.com/v2/resize:fit:800/1*n4NaE_6qCzUaKUPTNbfpcA.jpeg",
-        "https://m.media-amazon.com/images/I/51KrxEKN58L.jpg",
-        "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp",
-        "https://miro.medium.com/v2/resize:fit:800/1*n4NaE_6qCzUaKUPTNbfpcA.jpeg",
-        "https://m.media-amazon.com/images/I/51KrxEKN58L.jpg",
-        "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp",
-        "https://miro.medium.com/v2/resize:fit:800/1*n4NaE_6qCzUaKUPTNbfpcA.jpeg",
-        "https://m.media-amazon.com/images/I/51KrxEKN58L.jpg",
-        "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp",
-        "https://miro.medium.com/v2/resize:fit:800/1*n4NaE_6qCzUaKUPTNbfpcA.jpeg",
-        "https://m.media-amazon.com/images/I/51KrxEKN58L.jpg",
-        "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp",
-        "https://miro.medium.com/v2/resize:fit:800/1*n4NaE_6qCzUaKUPTNbfpcA.jpeg",
-        "https://m.media-amazon.com/images/I/51KrxEKN58L.jpg",
-        "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp",
-        "https://miro.medium.com/v2/resize:fit:800/1*n4NaE_6qCzUaKUPTNbfpcA.jpeg",
-        "https://m.media-amazon.com/images/I/51KrxEKN58L.jpg",
-        "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp",
-        "https://miro.medium.com/v2/resize:fit:800/1*n4NaE_6qCzUaKUPTNbfpcA.jpeg",
-        "https://m.media-amazon.com/images/I/51KrxEKN58L.jpg",
-        "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp",
-        "https://miro.medium.com/v2/resize:fit:800/1*n4NaE_6qCzUaKUPTNbfpcA.jpeg",
-        "https://m.media-amazon.com/images/I/51KrxEKN58L.jpg",
-        "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp",
-        "https://miro.medium.com/v2/resize:fit:800/1*n4NaE_6qCzUaKUPTNbfpcA.jpeg",
-        "https://m.media-amazon.com/images/I/51KrxEKN58L.jpg",
-        "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp",
-        "https://miro.medium.com/v2/resize:fit:800/1*n4NaE_6qCzUaKUPTNbfpcA.jpeg",
-        "https://m.media-amazon.com/images/I/51KrxEKN58L.jpg",
-        "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp",
-        "https://miro.medium.com/v2/resize:fit:800/1*n4NaE_6qCzUaKUPTNbfpcA.jpeg",
-        "https://m.media-amazon.com/images/I/51KrxEKN58L.jpg",
-        "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp",
-        "https://miro.medium.com/v2/resize:fit:800/1*n4NaE_6qCzUaKUPTNbfpcA.jpeg",
-        "https://m.media-amazon.com/images/I/51KrxEKN58L.jpg",
-        "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp",
-        "https://miro.medium.com/v2/resize:fit:800/1*n4NaE_6qCzUaKUPTNbfpcA.jpeg",
-        "https://m.media-amazon.com/images/I/51KrxEKN58L.jpg",
-        "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp",
-        "https://miro.medium.com/v2/resize:fit:800/1*n4NaE_6qCzUaKUPTNbfpcA.jpeg",
-        "https://m.media-amazon.com/images/I/51KrxEKN58L.jpg",
-        "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp",
-        "https://miro.medium.com/v2/resize:fit:800/1*n4NaE_6qCzUaKUPTNbfpcA.jpeg",
-        "https://m.media-amazon.com/images/I/51KrxEKN58L.jpg",
-        "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp",
-        "https://miro.medium.com/v2/resize:fit:800/1*n4NaE_6qCzUaKUPTNbfpcA.jpeg",
-        "https://m.media-amazon.com/images/I/51KrxEKN58L.jpg",
-        "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp",
-        "https://miro.medium.com/v2/resize:fit:800/1*n4NaE_6qCzUaKUPTNbfpcA.jpeg",
-        "https://m.media-amazon.com/images/I/51KrxEKN58L.jpg",
-        "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp",
-        "https://miro.medium.com/v2/resize:fit:800/1*n4NaE_6qCzUaKUPTNbfpcA.jpeg",
-        "https://m.media-amazon.com/images/I/51KrxEKN58L.jpg",
-        "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp",
-        "https://miro.medium.com/v2/resize:fit:800/1*n4NaE_6qCzUaKUPTNbfpcA.jpeg",
-        "https://m.media-amazon.com/images/I/51KrxEKN58L.jpg",
-        "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp",
-        "https://miro.medium.com/v2/resize:fit:800/1*n4NaE_6qCzUaKUPTNbfpcA.jpeg",
-        "https://m.media-amazon.com/images/I/51KrxEKN58L.jpg",
-        "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp",
-        "https://miro.medium.com/v2/resize:fit:800/1*n4NaE_6qCzUaKUPTNbfpcA.jpeg",
-        "https://m.media-amazon.com/images/I/51KrxEKN58L.jpg",
-        "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp",
-        "https://miro.medium.com/v2/resize:fit:800/1*n4NaE_6qCzUaKUPTNbfpcA.jpeg",
-        "https://m.media-amazon.com/images/I/51KrxEKN58L.jpg",
-        "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp",
-        "https://miro.medium.com/v2/resize:fit:800/1*n4NaE_6qCzUaKUPTNbfpcA.jpeg",
-        "https://m.media-amazon.com/images/I/51KrxEKN58L.jpg",
-        "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp",
-        "https://miro.medium.com/v2/resize:fit:800/1*n4NaE_6qCzUaKUPTNbfpcA.jpeg",
-        "https://m.media-amazon.com/images/I/51KrxEKN58L.jpg",
-        "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp",
-        "https://miro.medium.com/v2/resize:fit:800/1*n4NaE_6qCzUaKUPTNbfpcA.jpeg",
-        "https://m.media-amazon.com/images/I/51KrxEKN58L.jpg"        
-    ]
-    times=[]
+    images = ["URLs of images"] #Add your test URLS
+    lap_times=[]
     rounds=10
     for j in range(rounds):
         start_time = time.time()
+        k=0
         for i in images:
-            generate_image_embedding(i)
+            try:
+                generate_image_embedding(i)
+            except Exception as e:
+                return print("Can't convert: ",i,"at k = ",k,"\n",e)
+            k+=1
+            
         total_time = time.time()-start_time
-        times.append(total_time)
-    print("The program while running on",device,"took:"+str(sum(times)/rounds))
+        lap_times.append(total_time)
+    print("The program while running on",device,"took:"+str(sum(lap_times)/rounds))
 
-
-def generate_image_embedding(img):
-    url = "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp"
-    img  = Image.open(requests.get(url, stream=True).raw)
+@app.post("/image_embedd")
+async def generate_image_embedding(file: UploadFile = File(...), normalized: bool = True):
+    # demo_url = "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp"
+    # img  = Image.open(requests.get(img_url, stream=True).raw)
+    
+    # Read the file contents as bytes
+    file_bytes = await file.read()
+    
+    # Wrap the bytes in a BytesIO object
+    image_stream = BytesIO(file_bytes)
+    
+    # Open the image using PIL
+    img = Image.open(image_stream)
     image = processor(
         text=None,
         images=img,
         return_tensors='pt'
     ).to(device)['pixel_values']
+    
     image_embeddings = model.get_image_features(image)
-    print(image_embeddings  )
-    return image_embeddings
+    print(normalized)
+    ## normalization is in works
+    # if normalized:
+    #     image_embeddings = normalize(image_embeddings, p=2, dim=1)
+        
+    image_embeddings = image_embeddings.detach().cpu().tolist()
+    return {"result":image_embeddings[0]}
 
 
-benchmark_text()
-# benchmark_image()
-
+# benchmark_text()
+# benchmark_image() 
+    
     

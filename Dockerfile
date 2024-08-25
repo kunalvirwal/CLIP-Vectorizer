@@ -10,5 +10,4 @@ RUN pip3 install -r requirements.txt
 
 RUN apt-get update
 
-
-CMD ["python","./app/main.py"]
+CMD ["uvicorn","app.main:app", "--port", "5000"]
