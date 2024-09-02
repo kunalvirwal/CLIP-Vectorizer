@@ -12,21 +12,19 @@ This is openAI's CLIP model based API that creates text and image vector-embeddi
   > `docker build -t vectorizer .`
 
 - Run the program inside a container using
-  > `docker run -it --gpus all -p 5000:5000 vectorizer`  
+  > `docker run -it --gpus all -p 5000:8080 vectorizer`  
 
 ## ***API routes***
-- `/text_embedd`   
+- `/vectors`   
 
   > Post route for sending text to be embedded in JSON format.   
   > Example Input JSON:  
   > {  
   > &emsp;"text" : "Your text here",  
-  > &emsp;"normalized" : "True" or "False"  // Default = True  
   > }
-- `/image_embedd`  
+- `/vectors_img`  
 
   > Post route for sending images to be embedded in form-data format.   
   > Example Input Form-data:  
   > Key : file | Value : (Your image file)  
-  > Key : normalized | Value : "True" or "False"  // Default = True  
 

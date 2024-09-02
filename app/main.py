@@ -29,9 +29,8 @@ app = FastAPI()
 
 class Text_input(BaseModel):
     text: str
-    normalized: bool = True
 
-@app.post("/text_embedd")
+@app.post("/vectors")
 async def generate_text_embedding(text_input: Text_input ):
     phrase = text_input.text
     # print("Input: ",phrase)
@@ -44,16 +43,17 @@ async def generate_text_embedding(text_input: Text_input ):
     # encode tokens to sentence embeddings
     label_embeddings = model.get_text_features(**label_tokens)
     
-    if text_input.normalized:
-        label_embeddings = normalize(label_embeddings, p=2, dim=1)
+    # normalize the vector embeddings
+    label_embeddings = normalize(label_embeddings, p=2, dim=1)
+    
     # detach from pytorch gradient computation 
     label_embeddings = label_embeddings.detach().cpu().tolist()
     return {"result":label_embeddings[0]}
 
 
 
-@app.post("/image_embedd")
-async def generate_image_embedding(file: UploadFile = File(...), normalized: bool = Form(True)):
+@app.post("/vectors_img")
+async def generate_image_embedding(file: UploadFile = File(...)):
     # demo_url = "https://www.androidauthority.com/wp-content/uploads/2022/11/twitter-1-scaled-1000w-563h.jpg.webp"
     # img  = Image.open(requests.get(img_url, stream=True).raw)
     
@@ -70,9 +70,10 @@ async def generate_image_embedding(file: UploadFile = File(...), normalized: boo
     ).to(device)['pixel_values']
     # encode tokens to image embeddings
     image_embeddings = model.get_image_features(image)
-    # normalization is in works
-    if normalized:
-        image_embeddings = normalize(image_embeddings, p=2, dim=1)
+
+    # normalize the vector embeddings    
+    image_embeddings = normalize(image_embeddings, p=2, dim=1)
+    
     # detach from pytorch gradient computation 
     image_embeddings = image_embeddings.detach().cpu().tolist()
     return {"result":image_embeddings[0]}
@@ -103,7 +104,7 @@ def benchmark_image():
         k=0
         for i in images:
             try:
-                generate_image_embedding(i)
+                generate_image_embedding(i)  # uncomment the img url line before running image benchmark and change the input parameter to a string img_url instead of file also comment all lines related to direct image input
             except Exception as e:
                 return print("Can't convert: ",i,"at k = ",k,"\n",e)
             k+=1
